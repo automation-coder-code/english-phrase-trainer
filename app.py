@@ -6,7 +6,7 @@ import re
 st.set_page_config(page_title="English Phrase Trainer", page_icon="📖", layout="centered")
 st.markdown("""
     <style>
-    .stTextArea textarea { border-radius: 12px; border: 2px solid #007bff; }
+    .stTextArea textarea { border-radius: 12px; border: 2px solid #007bff; resize: none; }
     .stButton>button { border-radius: 20px; background-color: #007bff; color: white; height: 3.5em; width: 100%; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
@@ -21,34 +21,45 @@ except Exception:
 st.title("📖 English Phrase Trainer")
 st.caption("Foco em padrões de frases e pronúncia aproximada real")
 
-tab1, tab2 = st.tabs(["🔍 Tradutor & Análise", "📝 Prática"])
+tab1, tab2 = st.tabs(["🔍 Tradutor Real-time", "📝 Tutor de Inglês"])
 
 # --- ABA 1: TRADUTOR ---
 with tab1:
-    texto = st.text_area("Digite a frase para estudar:", placeholder="Ex: I go to the beach...", label_visibility="collapsed")
+    texto = st.text_area("SUA FRASE", placeholder="Ex: I go to the beach...", height=50)
    
     if st.button("Analisar para Estudo"):
         if texto:
             with st.spinner('Decompondo a frase...'):
                 try:
-                    # Prompt ajustado para fonética da frase completa, não palavra por palavra
+                    # Prompt ajustado para o novo formato de exemplos com estrutura específica
                     prompt = f"""Analise a frase: '{texto}'
                     Responda em PORTUGUÊS com este formato exato:
                    
-                    TRADUÇÃO: (tradução natural da frase completa)
+                    TRADUÇÃO / EQUIVALENTE: " (tradução natural, corrigindo erros se houver) "
                    
-                    FONÉTICA: (Pronúncia aproximada da frase completa com sons do português. Ex: Para 'I go to the beach' = 'Ai gôu tu dâ bitch'. Use transcrição fluida, NUNCA palavra por palavra ou com vogal extra em palavras secas).
+                    ANÁLISE INTELIGENTE: (Parágrafo explicando a frase, incluindo possíveis erros como capitalização, estrutura gramatical, uso correto, e pronúncia aproximada da frase completa com sons do português. Siga regras de fonética precisa:
+                    - 'I' = 'Ai'
+                    - 'go' = 'gôu'
+                    - 'to' = 'tu'
+                    - 'the' = 'dâ'
+                    - 'beach' = 'bitch'
+                    - 'park' = 'pârc'
+                    - 'store' = 'stôr'
+                    - 'gym' = 'djim'
+                    - 'library' = 'laibreri'
+                    - 'movies' = 'mûvis'
+                    - 'Monday' = 'mân-dêi'
+                    Exemplo de fonética: Para 'I go to the beach' = 'Ai gôu tu dâ bitch'. Integre a fonética no parágrafo de forma natural).
                    
-                    ANATOMIA: (Explique o que cada palavra faz na frase, de forma simples).
-                   
-                    5 EXEMPLOS EM INGLÊS: (Crie 5 novas frases OBRIGATORIAMENTE EM INGLÊS que usem o MESMO padrão exato da frase '{texto}'. Se a frase usa 'I go', todos os exemplos devem começar com 'I go'. Para cada exemplo, formate assim:
-                    1. [Frase em inglês]
-                       TRADUÇÃO: [tradução natural]
-                       FONÉTICA: [pronúncia aproximada da frase completa, ex: 'Ai gôu tu dâ stôr'])."""
+                    5 EXEMPLOS DE USO: (Crie 5 novas frases OBRIGATORIAMENTE EM INGLÊS que usem o MESMO padrão exato da frase '{texto}', corrigido se necessário. Para cada exemplo, formate exatamente assim com quebras de linha:
+                    1.
+                    English: [Frase em inglês].
+                    Tradução: [tradução natural em português].
+                    Pronúncia: [pronúncia aproximada da frase completa, ex: 'Ai gôu tu dâ bitch'].)"""
                    
                     completion = client.chat.completions.create(
                         messages=[
-                            {"role": "system", "content": "Você é um professor de inglês nativo. Seu objetivo é ensinar padrões de frases. Mantenha o padrão exato nos exemplos. Use fonética transcrita fluida para brasileiros (ex: 'I go to the beach' = 'Ai gôu tu dâ bitch'). Evite decompor em palavras isoladas."},
+                            {"role": "system", "content": "Você é um professor de inglês nativo. Analise frases, corrija erros, explique estrutura e pronúncia. Mantenha o padrão nos exemplos. Use fonética fluida para brasileiros, com 'the' SEMPRE como 'dâ'. Evite decompor palavras e erros de acento."},
                             {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
@@ -58,29 +69,26 @@ with tab1:
                     res = completion.choices[0].message.content
                     st.markdown("---")
                    
-                    # Parsing mais robusto usando regex para extrair seções exatas
-                    traducao_match = re.search(r'TRADUÇÃO:(.*?)(?=FONÉTICA:|$)', res, re.DOTALL)
-                    fonetica_match = re.search(r'FONÉTICA:(.*?)(?=ANATOMIA:|$)', res, re.DOTALL)
-                    anatomia_match = re.search(r'ANATOMIA:(.*?)(?=5 EXEMPLOS EM INGLÊS:|$)', res, re.DOTALL)
-                    exemplos_match = re.search(r'5 EXEMPLOS EM INGLÊS:(.*)', res, re.DOTALL)
+                    # Parsing ajustado para o novo formato
+                    traducao_match = re.search(r'TRADUÇÃO / EQUIVALENTE:(.*?)(?=ANÁLISE INTELIGENTE:|$)', res, re.DOTALL)
+                    analise_match = re.search(r'ANÁLISE INTELIGENTE:(.*?)(?=5 EXEMPLOS DE USO:|$)', res, re.DOTALL)
+                    exemplos_match = re.search(r'5 EXEMPLOS DE USO:(.*)', res, re.DOTALL)
                    
                     traducao = traducao_match.group(1).strip() if traducao_match else "Não encontrado"
-                    fonetica = fonetica_match.group(1).strip() if fonetica_match else "Não encontrado"
-                    anatomia = anatomia_match.group(1).strip() if anatomia_match else "Não encontrado"
+                    analise = analise_match.group(1).strip() if analise_match else "Não encontrado"
                     exemplos = exemplos_match.group(1).strip() if exemplos_match else "Não encontrado"
                    
-                    # Divisão visual por blocos de cores, agora separados
-                    st.success(f"### 🏁 Tradução\n{traducao}")
-                    st.info(f"### 🔊 Pronúncia\n{fonetica}")
-                    st.info(f"### 🧩 Estrutura\n{anatomia}")
-                    st.warning(f"### 💡 5 Exemplos com o mesmo padrão\n{exemplos}")
+                    # Exibição em blocos inspirados no screenshot
+                    st.info(f"### TRADUÇÃO / EQUIVALENTE\n{traducao}")
+                    st.info(f"### ANÁLISE INTELIGENTE\n{analise}")
+                    st.warning(f"### 5 EXEMPLOS DE USO\n{exemplos}")
                    
                 except Exception as e:
                     st.error(f"Erro na API: {str(e)}. Verifique o modelo ou a chave.")
         else:
             st.warning("Digite uma frase primeiro.")
 
-# --- ABA 2: DESAFIOS ---
+# --- ABA 2: DESAFIOS (agora como Tutor de Inglês) ---
 with tab2:
     st.header("🚀 Desafios")
     
