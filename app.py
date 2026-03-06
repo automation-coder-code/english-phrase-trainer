@@ -21,9 +21,9 @@ with tab1:
     texto = st.text_area("Digite sua frase em PT ou EN:", key="txt_trad")
     
     if texto:
-        with st.spinner('Analisando...'):
+        with st.spinner('Analisando com Llama 3.1...'):
             try:
-                # Formatando a chamada de forma simples e direta
+                # Atualizado para o modelo Llama 3.1 8B (mais recente e suportado)
                 completion = client.chat.completions.create(
                     messages=[
                         {
@@ -35,7 +35,7 @@ with tab1:
                             "content": texto
                         }
                     ],
-                    model="llama3-8b-8192",
+                    model="llama-3.1-8b-instant",
                 )
                 st.markdown("---")
                 st.markdown(completion.choices[0].message.content)
