@@ -31,21 +31,24 @@ with tab1:
         if texto:
             with st.spinner('Decompondo a frase...'):
                 try:
-                    # Prompt reforçado para manter o padrão e fonética real
+                    # Prompt ajustado para fonética da frase completa, não palavra por palavra
                     prompt = f"""Analise a frase: '{texto}'
                     Responda em PORTUGUÊS com este formato exato:
                    
-                    TRADUÇÃO: (tradução natural)
+                    TRADUÇÃO: (tradução natural da frase completa)
                    
-                    FONÉTICA: (Como se pronuncia com sons do português. Ex: 'Go' = 'Gôu', 'Beach' = 'Bitch'. NUNCA termine com vogal extra se a palavra for seca).
+                    FONÉTICA: (Pronúncia aproximada da frase completa com sons do português. Ex: Para 'I go to the beach' = 'Ai gôu tu dâ bitch'. Use transcrição fluida, NUNCA palavra por palavra ou com vogal extra em palavras secas).
                    
-                    ANATOMIA: (Explique o que cada palavra faz na frase).
+                    ANATOMIA: (Explique o que cada palavra faz na frase, de forma simples).
                    
-                    5 EXEMPLOS EM INGLÊS: (Crie 5 novas frases OBRIGATORIAMENTE EM INGLÊS que usem o MESMO padrão da frase '{texto}'. Se a frase usa 'I go', todos os exemplos devem começar com 'I go'. Inclua Tradução e Fonética para cada um)."""
+                    5 EXEMPLOS EM INGLÊS: (Crie 5 novas frases OBRIGATORIAMENTE EM INGLÊS que usem o MESMO padrão exato da frase '{texto}'. Se a frase usa 'I go', todos os exemplos devem começar com 'I go'. Para cada exemplo, formate assim:
+                    1. [Frase em inglês]
+                       TRADUÇÃO: [tradução natural]
+                       FONÉTICA: [pronúncia aproximada da frase completa, ex: 'Ai gôu tu dâ stôr'])."""
                    
                     completion = client.chat.completions.create(
                         messages=[
-                            {"role": "system", "content": "Você é um professor de inglês nativo. Seu objetivo é ensinar padrões de frases. Se o aluno escrever um padrão, mantenha esse padrão nos exemplos. Use fonética transcrita para brasileiros (ex: 'I' = 'Ai')."},
+                            {"role": "system", "content": "Você é um professor de inglês nativo. Seu objetivo é ensinar padrões de frases. Mantenha o padrão exato nos exemplos. Use fonética transcrita fluida para brasileiros (ex: 'I go to the beach' = 'Ai gôu tu dâ bitch'). Evite decompor em palavras isoladas."},
                             {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
