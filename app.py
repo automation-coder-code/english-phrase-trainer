@@ -1,12 +1,11 @@
 import streamlit as st
 from groq import Groq
 
-# Configuração da Página
-st.set_page_config(page_title="English Phrase Trainer", page_icon="🇬🇧", layout="centered")
+# Configuração da página
+st.set_page_config(page_title="English Phrase Trainer", page_icon="🇬🇧")
 
-# Inicialização do Cliente com tratamento de erro e indentação correta
+# Inicialização segura da API
 try:
-    # O comando abaixo deve estar recuado (com 4 espaços ou 1 TAB)
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
     st.error("⚠️ Erro: Chave GROQ_API_KEY não configurada nos Secrets do Streamlit.")
@@ -14,45 +13,33 @@ except Exception:
 
 st.title("🇬🇧 English Phrase Trainer")
 
-# Abas do Aplicativo
-tab1, tab2 = st.tabs(["🔍 Tradutor & Exemplos", "👨‍🏫 Treinamento Base"])
+# Abas de navegação
+tab1, tab2 = st.tabs(["🔍 Tradutor & 5 Exemplos", "👨‍🏫 Treino Básico"])
 
-# --- ABA 1: TRADUTOR ---
 with tab1:
     st.header("Tradutor Inteligente")
-    texto_usuario = st.text_area("Digite em PT ou EN:", key="input_tradutor")
-
-    if texto_usuario:
+    texto = st.text_area("Digite sua frase em PT ou EN:", key="txt_trad")
+    
+    if texto:
         with st.spinner('Analisando...'):
-            # Prompt estruturado para evitar erro de aspas triplas
-            prompt_content = (
-                f"Analise a frase: '{texto_usuario}'. "
-                "Retorne em Português: a tradução, se há erros gramaticais e "
-                "exatamente 5 exemplos curtos de uso em inglês com tradução."
-            )
+            prompt = f"Traduza e analise: '{texto}'. Forneça a tradução, explique erros gramaticais em português e dê 5 exemplos curtos de uso em inglês com tradução."
             
-            try:
-                completion = client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt_content}],
-                    model="llama3-8b-8192",
-                    temperature=0.5
-                )
-                st.markdown("---")
-                st.markdown(completion.choices[0].message.content)
-            except Exception as e:
-                st.error(f"Erro na API: {e}")
+            completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama3-8b-8192",
+            )
+            st.markdown("---")
+            st.markdown(completion.choices[0].message.content)
 
-# --- ABA 2: TREINAMENTO ---
 with tab2:
     st.header("Treino Iniciante")
-    st.info("Pratique frases do dia a dia.")
-    
+    st.info("Vamos praticar o que você usa no trabalho!")
     st.markdown("**Desafio:** Como se diz 'Eu sou um analista de processos' em inglês?")
-    resposta = st.text_input("Sua resposta:", key="input_treino")
     
+    res = st.text_input("Sua resposta:", key="txt_treino")
     if st.button("Validar"):
-        if "i am a process analyst" in resposta.lower().strip():
+        if "i am a process analyst" in res.lower().strip():
             st.balloons()
-            st.success("Correto! 🎉")
+            st.success("Correct! 🎉")
         else:
             st.warning("Tente: 'I am a process analyst'.")
