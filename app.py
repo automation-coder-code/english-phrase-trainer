@@ -1,16 +1,13 @@
 import streamlit as st
 from groq import Groq
 
-# 1. Configuração de UX (Design que você gostou)
+# 1. Configuração de UX (Visual Organizado por Cores)
 st.set_page_config(page_title="English Phrase Trainer", page_icon="📖", layout="centered")
 
 st.markdown("""
     <style>
     .stTextArea textarea { border-radius: 12px; border: 1px solid #007bff; }
     .stButton>button { border-radius: 20px; background-color: #007bff; color: white; height: 3.5em; width: 100%; font-weight: bold; }
-    /* Estilo para as caixas de resultado */
-    .res-box { padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid; }
-    .blue-box { background-color: #eef6ff; border-left-color: #007bff; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -18,11 +15,11 @@ st.markdown("""
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
-    st.error("⚠️ Erro: Adicione a chave nos Secrets do Streamlit.")
+    st.error("⚠️ Erro: Chave de API não configurada nos Secrets.")
     st.stop()
 
 st.title("📖 English Phrase Trainer")
-st.caption("Focado em Estudo Pessoal e Fonética Correta")
+st.caption("Foco em pronúncia correta e estrutura da frase")
 
 tab1, tab2 = st.tabs(["🔍 Tradutor & Análise", "📝 Desafios"])
 
@@ -34,37 +31,50 @@ with tab1:
         if texto:
             with st.spinner('Analisando...'):
                 try:
-                    # Prompt Simplificado para não bugar a resposta
+                    # Prompt ultra detalhado para não haver erro de idioma ou fonética
                     prompt = f"""Analise a frase: '{texto}'
                     Responda em PORTUGUÊS seguindo exatamente esta ordem:
                     
-                    TRADUÇÃO: (tradução natural)
+                    1. TRADUÇÃO: (tradução natural para português)
                     
-                    FONÉTICA: (Como um brasileiro lê. Ex: 'School' é 'Skul', não 'Skola'. 'I' é 'Ai'. Não coloque 'i' no final de palavras que terminam em consoante).
+                    2. PRONÚNCIA: (Escreva como um brasileiro leria para soar inglês correto. 
+                    Exemplo: 'School' escreva 'Skul'. 'I' escreva 'Ai'. 'Go' escreva 'Gôu'. 
+                    NUNCA termine palavras com 'a' ou 'i' se o som original for seco).
                     
-                    ANATOMIA: (Liste cada palavra e o que ela faz na frase: sujeito, verbo, objeto, etc).
+                    3. ANATOMIA: (Liste cada palavra da frase original em inglês e sua função: ex: verbo, sujeito, etc).
                     
-                    EXEMPLOS: (Traga 5 frases curtas usando o contexto com tradução e fonética)."""
+                    4. 5 EXEMPLOS EM INGLÊS: (Crie 5 frases novas OBRIGATORIAMENTE EM INGLÊS. Para cada uma, traga a tradução e a pronúncia transcrita)."""
                     
                     completion = client.chat.completions.create(
                         messages=[
-                            {"role": "system", "content": "Você é um professor de inglês didático. Responda de forma curta e organizada."},
+                            {"role": "system", "content": "Você é um professor de inglês nativo que fala português. Seu foco é ensinar brasileiros a não falarem com sotaque de 'i' ou 'a' no final das palavras. Os 5 exemplos devem ser frases em inglês."},
                             {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
-                        temperature=0.2
+                        temperature=0.1
                     )
                     
                     resposta = completion.choices[0].message.content
                     
                     st.markdown("---")
                     
-                    # Organização por Caixas Coloridas
-                    st.success(f"### 🏁 Tradução\n{resposta.split('FONÉTICA:')[0].replace('TRADUÇÃO:', '')}")
-                    
-                    st.info(f"### 🧩 Pronúncia e Estrutura\n{resposta.split('EXEMPLOS:')[0].split('FONÉTICA:')[1]}")
-                    
-                    st.warning(f"### 💡 5 Exemplos Extras\n{resposta.split('EXEMPLOS:')[-1]}")
+                    # Divisão visual por seções para evitar bagunça
+                    if "2. PRONÚNCIA:" in resposta and "3. ANATOMIA:" in resposta and "4. 5 EXEMPLOS EM INGLÊS:" in resposta:
+                        secao1 = resposta.split("2. PRONÚNCIA:")[0]
+                        secao2 = resposta.split("3. ANATOMIA:")[0].split("2. PRONÚNCIA:")[1]
+                        secao3 = resposta.split("4. 5 EXEMPLOS EM INGLÊS:")[0].split("3. ANATOMIA:")[1]
+                        secao4 = resposta.split("4. 5 EXEMPLOS EM INGLÊS:")[1]
+                        
+                        st.success(f"### 🏁 Tradução\n{secao1.replace('1. TRADUÇÃO:', '').strip()}")
+                        
+                        st.info(f"### 🧩 Pronúncia Transcrita\n{secao2.strip()}")
+                        
+                        st.info(f"### 📖 Anatomia da Frase\n{secao3.strip()}")
+                        
+                        st.warning(f"### 💡 5 Exemplos em Inglês\n{secao4.strip()}")
+                    else:
+                        # Fallback caso a IA não siga a numeração exata
+                        st.markdown(resposta)
                     
                 except Exception as e:
                     st.error("Erro ao processar. Tente novamente.")
@@ -79,9 +89,9 @@ with tab2:
     if st.button("Verificar"):
         if "i study every day" in res_user.lower().strip():
             st.balloons()
-            st.success("Correto! Fonética: 'Ai stâdi évri dei'")
+            st.success("Correto! Pronúncia: 'Ai stâdi évri dei'")
         else:
             st.info("Dica: Use 'I study every day'.")
 
 st.markdown("---")
-st.caption("Keep studying! 🚀")
+st.caption("Foco total no seu aprendizado. 🚀")
