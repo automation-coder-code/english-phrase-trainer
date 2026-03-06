@@ -1,39 +1,15 @@
 import streamlit as st
 from groq import Groq
 
-# 1. Configuração de UX - Foco em Estudo e Aprendizado
-st.set_page_config(page_title="English Study Lab", page_icon="📖", layout="centered")
+# 1. Configuração de UX Estudo Premium
+st.set_page_config(page_title="English Phrase Trainer", page_icon="📖", layout="centered")
 
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    .stTextArea textarea { 
-        border: 2px solid #6c5ce7; 
-        border-radius: 15px; 
-    }
-    .stButton>button { 
-        width: 100%; 
-        border-radius: 25px; 
-        background-color: #6c5ce7; 
-        color: white; 
-        font-weight: bold;
-        height: 3.5em;
-        box-shadow: 0px 4px 10px rgba(108, 92, 231, 0.2);
-    }
-    .result-card {
-        padding: 20px;
-        border-radius: 15px;
-        background-color: white;
-        border-left: 8px solid #6c5ce7;
-        margin-top: 20px;
-    }
-    .word-tag {
-        background-color: #f1f0ff;
-        color: #6c5ce7;
-        padding: 2px 8px;
-        border-radius: 5px;
-        font-weight: bold;
-    }
+    .stTextArea textarea { border-radius: 12px; border: 1px solid #007bff; }
+    .stButton>button { border-radius: 20px; background-color: #007bff; color: white; height: 3.5em; width: 100%; font-weight: bold; }
+    .main-result { padding: 20px; border-radius: 15px; background-color: #eef6ff; border-left: 6px solid #007bff; margin-top: 20px; }
+    .section-title { color: #007bff; font-weight: bold; margin-top: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -41,84 +17,77 @@ st.markdown("""
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
-    st.error("⚠️ Erro: Chave de API não configurada.")
+    st.error("⚠️ Erro: Chave de API não configurada nos Secrets do Streamlit.")
     st.stop()
 
-# Cabeçalho de Estudo
-st.markdown("<h1 style='text-align: center; color: #6c5ce7;'>📖 English Study Lab</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Seu ambiente pessoal para prática e análise da língua inglesa.</p>", unsafe_allow_html=True)
+st.title("📖 English Phrase Trainer")
+st.caption("Seu laboratório pessoal para dominar a língua inglesa")
 
-tab1, tab2 = st.tabs(["🎯 Laboratório de Tradução", "📝 Prática de Gramática"])
+tab1, tab2 = st.tabs(["🔍 Tradutor Detalhado", "📝 Desafios de Estudo"])
 
-# --- ABA 1: TRADUTOR E ANÁLISE ---
+# --- ABA 1: TRADUTOR ---
 with tab1:
-    st.markdown("### ✍️ O que você quer aprender hoje?")
-    texto = st.text_area("", placeholder="Digite uma frase que você ouviu ou quer traduzir...", label_visibility="collapsed", height=120)
+    st.markdown("### 📝 Digite a frase para análise")
+    texto = st.text_area("", placeholder="Ex: I want to learn English faster...", label_visibility="collapsed", height=100)
     
-    if st.button("Analisar para Estudo"):
+    if st.button("Analisar Frase Completa"):
         if texto:
-            with st.spinner('A IA está decompondo a frase...'):
+            with st.spinner('Decompondo a estrutura da frase...'):
                 try:
-                    # Prompt focado em ensino da língua
-                    prompt_estudo = (
+                    # Prompt focado em fonética, gramática e 5 exemplos
+                    prompt_instrucao = (
                         f"Analise a frase: '{texto}'. "
-                        "Responda em PORTUGUÊS com estas seções: "
-                        "1. **Tradução Direta**: Tradução clara e natural. "
-                        "2. **Anatomia da Frase**: Liste cada palavra, o significado e explique a função gramatical (ex: artigo, substantivo, verbo no passado, preposição, etc). "
-                        "3. **Dicas de Estudo**: Explique uma regra gramatical presente nessa frase ou uma curiosidade cultural. "
-                        "4. **Variações**: 3 formas diferentes de dizer a mesma coisa."
+                        "Responda em PORTUGUÊS seguindo exatamente esta estrutura: "
+                        "1. **Tradução Principal**: Tradução natural da frase. "
+                        "2. **Pronúncia Prática (Fonética)**: Mostre como se lê cada palavra usando o som do português (Ex: You = Iu). "
+                        "3. **Anatomia da Frase**: Liste cada palavra, seu significado e o que ela faz na frase (sujeito, verbo, adjetivo, etc). "
+                        "4. **5 Exemplos de Uso**: Crie 5 frases diferentes usando a palavra principal, com tradução e fonética para cada uma."
                     )
                     
                     completion = client.chat.completions.create(
                         messages=[
-                            {"role": "system", "content": "Você é um professor particular de inglês paciente e didático. Use negrito e tabelas se necessário para facilitar o aprendizado."},
-                            {"role": "user", "content": prompt_estudo}
+                            {"role": "system", "content": "Você é um professor de inglês didático. Use negrito para destacar termos e mantenha um visual organizado."},
+                            {"role": "user", "content": prompt_instrucao}
                         ],
                         model="llama-3.1-8b-instant",
-                        temperature=0.4
+                        temperature=0.3
                     )
                     
-                    res = completion.choices[0].message.content
+                    # Exibição do Resultado Estilizado
+                    res_total = completion.choices[0].message.content
                     
                     st.markdown("---")
+                    st.markdown("### 🎯 Resultado da Análise")
                     
-                    # Blocos Coloridos para melhor UX de Estudo
-                    st.success("### 🏁 Tradução")
-                    st.write(res.split("2.")[0].replace("1. **Tradução Direta**:", "").strip())
+                    # Caixa de Tradução Principal
+                    st.info(f"**Tradução:** {res_total.split('2.')[0].replace('1. **Tradução Principal**:', '').strip()}")
                     
-                    st.info("### 🧩 Como a frase é construída (Palavra por Palavra)")
-                    st.markdown(res.split("2.")[-1].split("3.")[0])
-                    
-                    st.warning("### 💡 Dicas e Variações")
-                    st.markdown(res.split("3.")[-1])
+                    # Anatomia e Fonética
+                    st.markdown(f"<div class='main-result'>{res_total.split('2.')[-1]}</div>", unsafe_allow_html=True)
                     
                 except Exception as e:
-                    st.error(f"Erro na conexão: {e}")
+                    st.error(f"Erro na análise: {e}")
         else:
-            st.warning("Escreva algo para começarmos o estudo!")
+            st.warning("Por favor, insira um texto para começar o estudo.")
 
-# --- ABA 2: DESAFIOS DE GRAMÁTICA ---
+# --- ABA 2: DESAFIOS ---
 with tab2:
-    st.subheader("🚀 Desafios Rápidos")
-    st.write("Teste seu conhecimento básico e intermediário:")
+    st.header("🚀 Prática de Gramática")
+    st.write("Traduza a frase abaixo para testar seu conhecimento:")
     
-    # Exemplo de desafio de Gramática (Verb to Be / Present Continuous)
-    with st.container():
-        st.markdown("""
-        <div style='background-color: #fff; padding: 15px; border-radius: 10px; border: 1px solid #ddd;'>
-            <strong>Nível Iniciante:</strong><br>
-            Como se diz: "Eu estou estudando inglês agora"?
-        </div>
-        """, unsafe_allow_html=True)
-        
-        resposta = st.text_input("Sua resposta:", key="study_1")
-        if st.button("Verificar"):
-            res_limpa = resposta.lower().strip()
-            if "i am studying english" in res_limpa or "i'm studying english" in res_limpa:
-                st.balloons()
-                st.success("Perfeito! Você usou corretamente o Present Continuous (am + studying).")
-            else:
-                st.info("Dica: Lembre-se do verbo 'to be' (am) e o final 'ing' no verbo principal.")
+    st.markdown("""
+    <div style="background-color:#fff9c4; padding:20px; border-radius:10px; border-left: 6px solid #fbc02d;">
+        <strong>Desafio:</strong> Como se diz 'Eu gosto de ler livros' em inglês?
+    </div>
+    """, unsafe_allow_html=True)
+    
+    res_usuario = st.text_input("Sua resposta:", key="desafio_estudo")
+    if st.button("Verificar"):
+        if "i like to read books" in res_usuario.lower() or "i like reading books" in res_usuario.lower():
+            st.success("Correct! 🎉 Pronúncia: 'Ai laik tu rid buks'")
+            st.balloons()
+        else:
+            st.info("Dica: Use o verbo 'to read' e o substantivo 'books'.")
 
 st.markdown("---")
-st.caption("Foco: Evolução constante no idioma Inglês. Keep studying! 🚀")
+st.caption("Foco no aprendizado contínuo | Evolua seu Inglês diariamente")
