@@ -4,36 +4,48 @@ from groq import Groq
 # Configuração da página
 st.set_page_config(page_title="English Phrase Trainer", page_icon="🇬🇧")
 
-# Inicialização segura da API
+# Inicialização da API via Secrets
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
-    st.error("⚠️ Erro: Chave GROQ_API_KEY não configurada nos Secrets do Streamlit.")
+    st.error("⚠️ Chave GROQ_API_KEY não encontrada nos Secrets.")
     st.stop()
 
 st.title("🇬🇧 English Phrase Trainer")
 
-# Abas de navegação
 tab1, tab2 = st.tabs(["🔍 Tradutor & 5 Exemplos", "👨‍🏫 Treino Básico"])
 
+# --- ABA 1: TRADUTOR ---
 with tab1:
     st.header("Tradutor Inteligente")
     texto = st.text_area("Digite sua frase em PT ou EN:", key="txt_trad")
     
     if texto:
         with st.spinner('Analisando...'):
-            prompt = f"Traduza e analise: '{texto}'. Forneça a tradução, explique erros gramaticais em português e dê 5 exemplos curtos de uso em inglês com tradução."
-            
-            completion = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-8b-8192",
-            )
-            st.markdown("---")
-            st.markdown(completion.choices[0].message.content)
+            try:
+                # Formatando a chamada de forma simples e direta
+                completion = client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system", 
+                            "content": "Você é um professor de inglês. Traduza a frase, explique a gramática em português e dê 5 exemplos curtos em inglês com tradução."
+                        },
+                        {
+                            "role": "user", 
+                            "content": texto
+                        }
+                    ],
+                    model="llama3-8b-8192",
+                )
+                st.markdown("---")
+                st.markdown(completion.choices[0].message.content)
+            except Exception as e:
+                st.error(f"Erro na análise: {e}")
 
+# --- ABA 2: TREINO ---
 with tab2:
     st.header("Treino Iniciante")
-    st.info("Vamos praticar o que você usa no trabalho!")
+    st.info("Pratique termos do seu dia a dia profissional!")
     st.markdown("**Desafio:** Como se diz 'Eu sou um analista de processos' em inglês?")
     
     res = st.text_input("Sua resposta:", key="txt_treino")
@@ -42,4 +54,4 @@ with tab2:
             st.balloons()
             st.success("Correct! 🎉")
         else:
-            st.warning("Tente: 'I am a process analyst'.")
+            st.warning("Dica: Use 'I am a process analyst'.")
