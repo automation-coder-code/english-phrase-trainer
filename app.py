@@ -1,14 +1,16 @@
 import streamlit as st
 from groq import Groq
 
-# 1. Configuração de UX Estudo Premium
+# 1. Configuração de UX (Design que você gostou)
 st.set_page_config(page_title="English Phrase Trainer", page_icon="📖", layout="centered")
 
 st.markdown("""
     <style>
     .stTextArea textarea { border-radius: 12px; border: 1px solid #007bff; }
     .stButton>button { border-radius: 20px; background-color: #007bff; color: white; height: 3.5em; width: 100%; font-weight: bold; }
-    .main-result { padding: 20px; border-radius: 15px; background-color: #f0f7ff; border-left: 6px solid #007bff; margin-top: 20px; }
+    /* Estilo para as caixas de resultado */
+    .res-box { padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid; }
+    .blue-box { background-color: #eef6ff; border-left-color: #007bff; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -16,82 +18,70 @@ st.markdown("""
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception:
-    st.error("⚠️ Erro: Chave de API não configurada nos Secrets do Streamlit.")
+    st.error("⚠️ Erro: Adicione a chave nos Secrets do Streamlit.")
     st.stop()
 
 st.title("📖 English Phrase Trainer")
-st.caption("Seu laboratório pessoal para estudo da língua inglesa")
+st.caption("Focado em Estudo Pessoal e Fonética Correta")
 
-tab1, tab2 = st.tabs(["🔍 Tradutor & Análise", "📝 Prática e Desafios"])
+tab1, tab2 = st.tabs(["🔍 Tradutor & Análise", "📝 Desafios"])
 
-# --- ABA 1: TRADUTOR DETALHADO ---
+# --- ABA 1: TRADUTOR ---
 with tab1:
-    st.markdown("### ✍️ Digite a frase para estudar")
-    texto = st.text_area("", placeholder="Ex: I go to school every day...", label_visibility="collapsed", height=100)
+    texto = st.text_area("Digite a frase para estudar:", placeholder="Ex: I go to school...", label_visibility="collapsed")
     
-    if st.button("Analisar Frase Completa"):
+    if st.button("Analisar para Estudo"):
         if texto:
-            with st.spinner('Analisando pronúncia e gramática...'):
+            with st.spinner('Analisando...'):
                 try:
-                    # Prompt REFORMULADO para fonética ultra precisa
-                    prompt_instrucao = (
-                        f"Analise a frase: '{texto}'. "
-                        "Responda em PORTUGUÊS com estas seções: "
-                        "1. **Tradução Principal**: Tradução natural. "
-                        "2. **Fonética Prática (Som do Português)**: Escreva como um brasileiro leria essa frase para soar correto no inglês. "
-                        "ATENÇÃO: 'School' soa como 'skul', 'I' soa como 'Ai', 'Go' soa como 'Gôu'. Não invente vogais no final das palavras. "
-                        "3. **Anatomia da Frase**: O que cada palavra faz (sujeito, verbo, etc). "
-                        "4. **5 Exemplos de Estudo**: 5 frases curtas usando o contexto, com Tradução e Fonética Prática correta."
-                    )
+                    # Prompt Simplificado para não bugar a resposta
+                    prompt = f"""Analise a frase: '{texto}'
+                    Responda em PORTUGUÊS seguindo exatamente esta ordem:
+                    
+                    TRADUÇÃO: (tradução natural)
+                    
+                    FONÉTICA: (Como um brasileiro lê. Ex: 'School' é 'Skul', não 'Skola'. 'I' é 'Ai'. Não coloque 'i' no final de palavras que terminam em consoante).
+                    
+                    ANATOMIA: (Liste cada palavra e o que ela faz na frase: sujeito, verbo, objeto, etc).
+                    
+                    EXEMPLOS: (Traga 5 frases curtas usando o contexto com tradução e fonética)."""
                     
                     completion = client.chat.completions.create(
                         messages=[
-                            {"role": "system", "content": "Você é um especialista em fonética para brasileiros aprendendo inglês. Sua missão é evitar que o aluno pronuncie vogais inexistentes no final das palavras (como dizer 'dógui' em vez de 'dóg' ou 'skóla' em vez de 'skul')."},
-                            {"role": "user", "content": prompt_instrucao}
+                            {"role": "system", "content": "Você é um professor de inglês didático. Responda de forma curta e organizada."},
+                            {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
                         temperature=0.2
                     )
                     
-                    res_total = completion.choices[0].message.content
+                    resposta = completion.choices[0].message.content
                     
                     st.markdown("---")
-                    st.markdown("### 🎯 Resultado da Análise")
                     
-                    # Seção 1: Tradução
-                    st.success(f"**Tradução Principal:**\n\n{res_total.split('2.')[0].replace('1. **Tradução Principal**:', '').strip()}")
+                    # Organização por Caixas Coloridas
+                    st.success(f"### 🏁 Tradução\n{resposta.split('FONÉTICA:')[0].replace('TRADUÇÃO:', '')}")
                     
-                    # Seção 2 e 3: Fonética e Anatomia
-                    st.info("### 🧩 Pronúncia e Estrutura")
-                    st.markdown(f"<div class='main-result'>{res_total.split('2.')[-1].split('4.')[0]}</div>", unsafe_allow_html=True)
+                    st.info(f"### 🧩 Pronúncia e Estrutura\n{resposta.split('EXEMPLOS:')[0].split('FONÉTICA:')[1]}")
                     
-                    # Seção 4: 5 Exemplos
-                    st.warning("### 💡 Mais 5 Exemplos para Praticar")
-                    st.markdown(res_total.split('4.')[-1])
+                    st.warning(f"### 💡 5 Exemplos Extras\n{resposta.split('EXEMPLOS:')[-1]}")
                     
                 except Exception as e:
-                    st.error(f"Erro na análise: {e}")
+                    st.error("Erro ao processar. Tente novamente.")
         else:
-            st.warning("Por favor, insira um texto para começar.")
+            st.warning("Digite uma frase primeiro!")
 
 # --- ABA 2: DESAFIOS ---
 with tab2:
-    st.header("🚀 Desafio do Dia")
-    st.write("Traduza a frase abaixo:")
-    
-    st.markdown("""
-    <div style="background-color:#fff3cd; padding:20px; border-radius:10px; border-left: 6px solid #ffc107;">
-        <strong>Desafio:</strong> Como se diz 'Eu vou ao trabalho' em inglês?
-    </div>
-    """, unsafe_allow_html=True)
-    
-    res_usuario = st.text_input("Sua resposta:", key="desafio_estudo")
-    if st.button("Validar Resposta"):
-        if "i go to work" in res_usuario.lower().strip():
-            st.success("Correct! 🎉 Fonética: 'Ai gôu tu uôrk'")
+    st.header("🚀 Prática")
+    st.markdown("**Como se diz 'Eu estudo todos os dias' em inglês?**")
+    res_user = st.text_input("Sua resposta:", key="study_day")
+    if st.button("Verificar"):
+        if "i study every day" in res_user.lower().strip():
             st.balloons()
+            st.success("Correto! Fonética: 'Ai stâdi évri dei'")
         else:
-            st.info("Dica: Use 'I go to work'.")
+            st.info("Dica: Use 'I study every day'.")
 
 st.markdown("---")
-st.caption("Foco na pronúncia correta. Keep going! 🚀")
+st.caption("Keep studying! 🚀")
